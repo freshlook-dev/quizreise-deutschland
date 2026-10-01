@@ -7,6 +7,7 @@ node_modules/
 .expo/
 dist/
 web-build/
+quizreise-deutschland-source.zip
 expo-env.d.ts
 
 # Native

@@ -1,16 +1,21 @@
 {
   "expo": {
-    "name": "Milioneri",
-    "slug": "Milioneri",
+    "name": "Quizreise Deutschland",
+    "slug": "quizreise-deutschland",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "milioneri",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.quizreise.deutschland",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "com.quizreise.deutschland",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -37,6 +42,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b45bb806-38e1-41c7-aa51-8eaf9cddc881"
+      }
     }
   }
 }
