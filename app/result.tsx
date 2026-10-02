@@ -3,6 +3,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Card, Header, PrimaryButton, Screen, SecondaryButton, StatPill, WalletPill } from '@/src/components/ui';
+import { ResultBadge, Reveal } from '@/src/components/visuals';
 import { getState } from '@/src/data/states';
 import { useGame } from '@/src/state/GameProvider';
 import { colors, formatEuro, spacing } from '@/src/theme';
@@ -32,18 +33,18 @@ export default function ResultScreen() {
 
   return <Screen scroll={false} contentStyle={styles.screen}>
     <Header title="ERGEBNIS" onBack={() => router.replace('/')} right={!isQuick ? <WalletPill value={progress.wallet} /> : undefined} />
-    <View style={styles.celebration}><Text style={styles.bigEmoji}>{isFinalSuccess ? '🏆' : isFinalFailure ? '🧭' : isCategory ? score >= 8 ? '✨' : '💡' : prize === 1000000 ? '🏆' : '⚡'}</Text><Text style={styles.title}>{isFinalSuccess ? 'BUNDESLAND GEMEISTERT!' : isFinalFailure ? 'NOCH NICHT GESCHAFFT' : isCategory ? score >= 8 ? 'KATEGORIE BESTANDEN' : 'WEITER ÜBEN' : prize === 1000000 ? 'JACKPOT!' : 'RUNDE BEENDET'}</Text><Text style={styles.subtitle}>{isFinalSuccess || isFinalFailure || isCategory ? state.name : 'Schnellquiz'}</Text></View>
-    <Card accent style={styles.resultCard}>
+    <Reveal delay={70} style={styles.celebration}><ResultBadge type={isFinalSuccess ? 'success' : isFinalFailure ? 'failure' : isCategory ? score >= 8 ? 'success' : 'practice' : prize === 1000000 ? 'jackpot' : 'quick-failure'} /><Text style={styles.eyebrow}>{isFinalSuccess ? 'MEISTERMOMENT' : isFinalFailure ? 'NÄCHSTER VERSUCH' : isCategory ? 'KATEGORIE-CHECK' : 'ARCADE-RUNDE'}</Text><Text style={styles.title}>{isFinalSuccess ? 'BUNDESLAND GEMEISTERT!' : isFinalFailure ? 'NOCH NICHT GESCHAFFT' : isCategory ? score >= 8 ? 'KATEGORIE BESTANDEN' : 'WEITER ÜBEN' : prize === 1000000 ? 'JACKPOT!' : 'RUNDE BEENDET'}</Text><Text style={styles.subtitle}>{isFinalSuccess || isFinalFailure || isCategory ? state.name : 'Schnellquiz'}</Text></Reveal>
+    <Reveal delay={170}><Card accent style={styles.resultCard}>
       {isFinalSuccess ? <><Text style={styles.resultLead}>15 / 15 richtig</Text><Text style={styles.resultBody}>Du hast das Finale fehlerfrei gemeistert und {state.name} vollständig abgeschlossen.</Text><View style={styles.rewardBox}><Text style={styles.rewardLabel}>EINMALIGE FINALE-BELohnung</Text><Text style={styles.rewardValue}>{formatEuro(1500)}</Text></View></> : isFinalFailure ? <><Text style={styles.resultLead}>{score} / 15 richtig</Text><Text style={styles.resultBody}>Eine falsche Antwort beendet das Finale. Deine Kategorien und dein bisheriges Guthaben bleiben erhalten.</Text><View style={styles.infoBox}><Text style={styles.infoText}>Du kannst das Finale jederzeit kostenlos neu versuchen.</Text></View></> : isCategory ? <><View style={styles.statsRow}><StatPill label="Dein Ergebnis" value={`${score} / 10`} /><StatPill label="Bestwert" value={`${Number(params.best ?? score)} / 10`} /></View><Text style={styles.resultBody}>{score >= 8 ? 'Stark! Diese Kategorie gilt als bestanden.' : 'Für die Kategorie brauchst du mindestens 8 richtige Antworten.'}</Text><View style={styles.rewardBox}><Text style={styles.rewardLabel}>NEU VERDIENT</Text><Text style={styles.rewardValue}>{formatEuro(reward)}</Text></View></> : <><Text style={styles.resultLead}>{formatEuro(prize)}</Text><Text style={styles.resultBody}>{score === 15 ? 'Alle 15 Fragen richtig – der virtuelle Jackpot gehört dir.' : `Du hast ${score} von 15 Fragen richtig beantwortet.`}</Text><View style={styles.infoBox}><Text style={styles.infoText}>Schnellquiz-Gewinne bleiben getrennt und erhöhen nicht dein Karriere-Guthaben.</Text></View></>}
-    </Card>
-    <View style={styles.actions}><PrimaryButton title={isFinalSuccess ? 'Zur Deutschlandkarte' : isCategory ? 'Nochmal spielen' : 'Nochmal versuchen'} onPress={isFinalSuccess ? () => router.replace('/career/map') : retry} /><SecondaryButton title={isFinalSuccess || isFinalFailure ? 'Zurück zur Karte' : 'Zum Startbildschirm'} onPress={() => router.replace(isFinalSuccess || isFinalFailure ? '/career/map' : '/')} style={styles.secondaryAction} /></View>
+    </Card></Reveal>
+    <Reveal delay={250} style={styles.actions}><PrimaryButton title={isFinalSuccess ? 'Zur Deutschlandkarte' : isCategory ? 'Nochmal spielen' : 'Nochmal versuchen'} onPress={isFinalSuccess ? () => router.replace('/career/map') : retry} /><SecondaryButton title={isFinalSuccess || isFinalFailure ? 'Zurück zur Karte' : 'Zum Startbildschirm'} onPress={() => router.replace(isFinalSuccess || isFinalFailure ? '/career/map' : '/')} style={styles.secondaryAction} /></Reveal>
   </Screen>;
 }
 
 const styles = StyleSheet.create({
   screen: { justifyContent: 'center' },
   celebration: { alignItems: 'center', marginVertical: spacing.lg },
-  bigEmoji: { fontSize: 58, marginBottom: 12 },
+  eyebrow: { color: colors.gold, fontSize: 9, fontWeight: '900', letterSpacing: 1.7, marginTop: 17 },
   title: { color: colors.gold, fontSize: 22, fontWeight: '900', textAlign: 'center', letterSpacing: 0.6 },
   subtitle: { color: colors.mutedText, fontSize: 14, marginTop: 5 },
   resultCard: { padding: spacing.lg },

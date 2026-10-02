@@ -3,11 +3,12 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Card, Header, PrimaryButton, ProgressBar, Screen, StatPill, WalletPill } from '@/src/components/ui';
-import { getState } from '@/src/data/states';
+import { getState, getStateStatus } from '@/src/data/states';
 import { allCategoriesPassed } from '@/src/game/rules';
 import { useGame } from '@/src/state/GameProvider';
 import { colors, formatEuro, radii, spacing } from '@/src/theme';
 import { CategoryId, StateId } from '@/src/types';
+import { CategoryGlyph, Reveal, StateSeal } from '@/src/components/visuals';
 
 export default function StateOverviewScreen() {
   const router = useRouter();
@@ -15,25 +16,26 @@ export default function StateOverviewScreen() {
   const stateId = (params.stateId ?? 'HH') as StateId;
   const state = getState(stateId);
   const { progress } = useGame();
+  const stateStatus = getStateStatus(stateId, progress);
   const best = progress.categoryBest[stateId] ?? {};
   const passedCount = state.categories.filter((category) => (best[category.id] ?? 0) >= 8).length;
   const finalUnlocked = allCategoriesPassed(progress, stateId, state.categories.map((category) => category.id));
 
   return <Screen>
     <Header title={state.name.toUpperCase()} subtitle="Bundesland-Übersicht" onBack={() => router.back()} right={<WalletPill value={progress.wallet} />} />
-    <Card accent style={styles.hero}>
-      <View style={styles.heroTop}><View style={styles.bigIcon}><Text style={styles.bigEmoji}>{state.emoji}</Text></View><View style={styles.heroCopy}><Text style={styles.heroTitle}>Deine Reise in {state.name}</Text><Text style={styles.heroSubtitle}>Hauptstadt · {state.capital}</Text></View></View>
+    <Reveal delay={80}><Card accent style={styles.hero}>
+      <View style={styles.heroTop}><View style={styles.bigIcon}><StateSeal stateId={stateId} status={stateStatus} /></View><View style={styles.heroCopy}><Text style={styles.heroTitle}>Deine Reise in {state.name}</Text><Text style={styles.heroSubtitle}>Hauptstadt · {state.capital}</Text></View></View>
       <View style={styles.progressLine}><Text style={styles.progressText}>{passedCount} / 6 Kategorien bestanden</Text><Text style={styles.progressText}>{Math.round((passedCount / 6) * 100)} %</Text></View><ProgressBar value={passedCount / 6} />
-    </Card>
+    </Card></Reveal>
 
     <Text style={styles.sectionLabel}>QUIZ-KATEGORIEN</Text>
-    <View style={styles.grid}>{state.categories.map((category) => {
+    <View style={styles.grid}>{state.categories.map((category, index) => {
       const score = best[category.id] ?? 0;
       const passed = score >= 8;
-      return <Card key={category.id} style={styles.categoryCard}><View style={styles.categoryTop}><View style={styles.categoryIcon}><Text style={styles.categoryIconText}>{category.icon}</Text></View><View style={styles.categoryCopy}><Text style={styles.categoryName}>{category.name}</Text><Text style={styles.categoryMeta}>10 Fragen · bis {formatEuro(600)}</Text></View></View><View style={styles.categoryBottom}><StatPill label="Bestwert" value={`${score} / 10`} /><Text style={[styles.completionText, passed && styles.completedText]}>{passed ? '✓ Bestanden' : 'Offen'}</Text></View><PrimaryButton title={passed ? 'Verbessern' : 'Starten'} compact onPress={() => router.push({ pathname: '/quiz/[mode]', params: { mode: 'category', stateId, categoryId: category.id } })} /></Card>;
+      return <Reveal key={category.id} delay={130 + index * 45}><Card style={styles.categoryCard}><View style={styles.categoryTop}><CategoryGlyph glyph={category.icon} delay={130 + index * 45} /><View style={styles.categoryCopy}><Text style={styles.categoryName}>{category.name}</Text><Text style={styles.categoryMeta}>10 Fragen · bis {formatEuro(600)}</Text></View><Text style={[styles.completionText, passed && styles.completedText]}>{passed ? '✓' : '○'}</Text></View><View style={styles.categoryBottom}><StatPill label="Bestwert" value={`${score} / 10`} /><Text style={[styles.completionText, passed && styles.completedText]}>{passed ? 'Bestanden' : 'Offen'}</Text></View><PrimaryButton title={passed ? 'Verbessern' : 'Starten'} compact onPress={() => router.push({ pathname: '/quiz/[mode]', params: { mode: 'category', stateId, categoryId: category.id } })} /></Card></Reveal>;
     })}</View>
 
-    <Card accent style={[styles.finalCard, !finalUnlocked && styles.lockedCard]}><View style={styles.finalHeader}><View style={styles.trophy}><Text style={styles.trophyText}>{finalUnlocked ? '🏆' : '🔒'}</Text></View><View style={styles.finalCopy}><Text style={styles.finalTitle}>DAS GROSSE FINALE</Text><Text style={styles.finalSubtitle}>15 Fragen · 15/15 zum Bestehen · {formatEuro(1500)}</Text></View></View><Text style={styles.finalBody}>{finalUnlocked ? 'Alle Kategorien sind bestanden. Jetzt wartet die Meisterprüfung auf dich.' : `Noch ${6 - passedCount} Kategorien bis zur Meisterprüfung.`}</Text><PrimaryButton title={finalUnlocked ? 'Finale starten' : 'Finale gesperrt'} disabled={!finalUnlocked} onPress={() => router.push({ pathname: '/quiz/[mode]', params: { mode: 'final', stateId } })} /></Card>
+    <Reveal delay={460}><Card accent style={[styles.finalCard, !finalUnlocked && styles.lockedCard]}><View style={styles.finalHeader}><View style={styles.trophy}><Text style={styles.trophyText}>{finalUnlocked ? '✦' : '—'}</Text></View><View style={styles.finalCopy}><Text style={styles.finalTitle}>DAS GROSSE FINALE</Text><Text style={styles.finalSubtitle}>15 Fragen · 15/15 zum Bestehen · {formatEuro(1500)}</Text></View></View><Text style={styles.finalBody}>{finalUnlocked ? 'Alle Kategorien sind bestanden. Jetzt wartet die Meisterprüfung auf dich.' : `Noch ${6 - passedCount} Kategorien bis zur Meisterprüfung.`}</Text><PrimaryButton title={finalUnlocked ? 'Finale starten' : 'Finale gesperrt'} disabled={!finalUnlocked} onPress={() => router.push({ pathname: '/quiz/[mode]', params: { mode: 'final', stateId } })} /></Card></Reveal>
     <Text style={styles.disclaimer}>Alle Einnahmen sind fiktive Quiz-Euro und nicht gegen echtes Geld einlösbar.</Text>
   </Screen>;
 }
