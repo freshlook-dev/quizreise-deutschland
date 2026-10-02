@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { getState } from '@/src/data/states';
-import { CATEGORY_REWARDS, PRIZE_LADDER, applyCategoryResult, canClaimFinalReward, canPurchaseState, categoryPassed, completeFinalProgress, evaluateFinalAnswer, getCategoryReward, getCategoryRewardDelta, purchaseState, shuffleQuestionAnswers } from '@/src/game/rules';
+import { CATEGORY_REWARDS, PRIZE_LADDER, applyCategoryResult, canClaimFinalReward, canPurchaseState, categoryPassed, completeFinalProgress, evaluateFinalAnswer, evaluateQuizAnswer, getCategoryReward, getCategoryRewardDelta, purchaseState, shuffleQuestionAnswers } from '@/src/game/rules';
 import { GameProgress, Question } from '@/src/types';
 
 function progress(overrides: Partial<GameProgress> = {}): GameProgress {
@@ -23,6 +23,10 @@ test('Verbesserung zahlt nur die Differenz', () => {
   assert.equal(getCategoryRewardDelta(10, 10), 0);
 });
 test('Eine falsche Final-Antwort beendet den Versuch', () => assert.deepEqual(evaluateFinalAnswer(2, 1, 4), { correct: false, ended: true, correctCount: 4 }));
+test('Eine falsche Antwort beendet auch Kategorie und Schnellquiz sofort', () => {
+  assert.deepEqual(evaluateQuizAnswer(1, 0, 6), { correct: false, ended: true, correctCount: 6 });
+  assert.deepEqual(evaluateQuizAnswer(3, 2, 11), { correct: false, ended: true, correctCount: 11 });
+});
 test('15 korrekte Final-Antworten bestehen', () => assert.deepEqual(evaluateFinalAnswer(2, 2, 14), { correct: true, ended: false, correctCount: 15 }));
 test('Finale wird nur einmal belohnt', () => {
   const first = completeFinalProgress(progress(), 'HH', 15);

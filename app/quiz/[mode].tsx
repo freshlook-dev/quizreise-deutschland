@@ -5,7 +5,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { AnswerButton, Card, Header, PrimaryButton, ProgressBar, Screen, SecondaryButton, WalletPill } from '@/src/components/ui';
 import { FINAL_POOL, findQuestion, getCategoryQuestions, QUICK_POOL } from '@/src/data/questions';
 import { getState } from '@/src/data/states';
-import { PRIZE_LADDER, getCategoryReward, getCategoryRewardDelta, selectQuestions, shuffleQuestionAnswers } from '@/src/game/rules';
+import { PRIZE_LADDER, evaluateQuizAnswer, getCategoryReward, getCategoryRewardDelta, selectQuestions, shuffleQuestionAnswers } from '@/src/game/rules';
 import { useGame } from '@/src/state/GameProvider';
 import { colors, formatEuro, spacing } from '@/src/theme';
 import { CategoryId, Question, QuizMode, StateId } from '@/src/types';
@@ -19,6 +19,7 @@ export default function QuizScreen() {
   const mode = (params.mode ?? 'quick') as QuizMode;
   const { progress, session, hydrated, recordCategoryResult, completeFinal, setQuickHighScore, saveSession } = useGame();
   const initialized = useRef(false);
+  const attemptEnded = useRef(false);
   const resumeSession = params.resume === '1' && session?.mode === mode ? session : null;
   const effectiveStateId = (resumeSession?.stateId ?? params.stateId ?? 'HH') as StateId;
   const effectiveCategoryId = (resumeSession?.categoryId ?? params.categoryId ?? 'general') as CategoryId;
@@ -65,7 +66,7 @@ export default function QuizScreen() {
   }, [question, currentIndex]);
 
   useEffect(() => {
-    if (!questions.length || !initialized.current) return;
+    if (!questions.length || !initialized.current || attemptEnded.current) return;
     saveSession({ mode, stateId: mode === 'quick' ? undefined : effectiveStateId, categoryId: mode === 'category' ? effectiveCategoryId : undefined, questionIds: questions.map((item) => item.id), currentIndex, answers, usedLifelines });
   }, [answers, currentIndex, effectiveCategoryId, effectiveStateId, mode, questions, saveSession, usedLifelines]);
 
@@ -81,12 +82,16 @@ export default function QuizScreen() {
 
   function selectAnswer(originalIndex: number) {
     if (answered) return;
-    const correct = originalIndex === question.correctIndex;
+    const evaluation = evaluateQuizAnswer(question.correctIndex, originalIndex, correctCount);
     setSelected(originalIndex);
     setAnswered(true);
-    setLastWasCorrect(correct);
+    setLastWasCorrect(evaluation.correct);
     setAnswers((current) => [...current, originalIndex]);
-    if (correct) setCorrectCount((current) => current + 1);
+    if (evaluation.correct) {
+      setCorrectCount(evaluation.correctCount);
+      return;
+    }
+    goToResult(evaluation.correctCount, question.options[question.correctIndex]);
   }
 
   function useFiftyFifty() {
@@ -112,24 +117,26 @@ export default function QuizScreen() {
     setUsedLifelines((current) => [...current, 'swap']);
   }
 
-  function goToResult(nextCorrectCount: number) {
+  function goToResult(nextCorrectCount: number, correctAnswer?: string) {
+    attemptEnded.current = true;
     saveSession(null);
+    const attemptedQuestionIds = questions.slice(0, currentIndex + 1).map((item) => item.id);
     if (mode === 'category') {
       const previousBest = progress.categoryBest[effectiveStateId]?.[effectiveCategoryId] ?? 0;
       const earned = getCategoryRewardDelta(previousBest, nextCorrectCount);
-      recordCategoryResult(effectiveStateId, effectiveCategoryId, nextCorrectCount, questions.map((item) => item.id));
-      router.replace({ pathname: '/result', params: { resultType: 'category', stateId: effectiveStateId, categoryId: effectiveCategoryId, score: String(nextCorrectCount), reward: String(earned), best: String(Math.max(previousBest, nextCorrectCount)) } });
+      recordCategoryResult(effectiveStateId, effectiveCategoryId, nextCorrectCount, attemptedQuestionIds);
+      router.replace({ pathname: '/result', params: { resultType: 'category', stateId: effectiveStateId, categoryId: effectiveCategoryId, score: String(nextCorrectCount), reward: String(earned), best: String(Math.max(previousBest, nextCorrectCount)), ...(correctAnswer ? { correctAnswer } : {}) } });
       return;
     }
     if (isFinal) {
       const passed = nextCorrectCount === 15 && lastWasCorrect === true;
-      if (passed) completeFinal(effectiveStateId, 15, questions.map((item) => item.id));
-      router.replace({ pathname: '/result', params: { resultType: passed ? 'final-success' : 'final-failure', stateId: effectiveStateId, score: String(nextCorrectCount) } });
+      if (passed) completeFinal(effectiveStateId, 15, attemptedQuestionIds);
+      router.replace({ pathname: '/result', params: { resultType: passed ? 'final-success' : 'final-failure', stateId: effectiveStateId, score: String(nextCorrectCount), ...(correctAnswer ? { correctAnswer } : {}) } });
       return;
     }
     const prize = nextCorrectCount === 15 ? PRIZE_LADDER[14] : nextCorrectCount === 0 ? 0 : PRIZE_LADDER[nextCorrectCount - 1];
     setQuickHighScore(prize);
-    router.replace({ pathname: '/result', params: { resultType: 'quick', score: String(nextCorrectCount), prize: String(prize) } });
+    router.replace({ pathname: '/result', params: { resultType: 'quick', score: String(nextCorrectCount), prize: String(prize), ...(correctAnswer ? { correctAnswer } : {}) } });
   }
 
   function nextQuestion() {

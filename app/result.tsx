@@ -11,7 +11,7 @@ import { CategoryId, StateId } from '@/src/types';
 
 export default function ResultScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ resultType?: string; stateId?: string; categoryId?: string; score?: string; reward?: string; best?: string; prize?: string }>();
+  const params = useLocalSearchParams<{ resultType?: string; stateId?: string; categoryId?: string; score?: string; reward?: string; best?: string; prize?: string; correctAnswer?: string }>();
   const { progress } = useGame();
   const type = params.resultType ?? 'quick';
   const score = Number(params.score ?? 0);
@@ -36,6 +36,7 @@ export default function ResultScreen() {
     <Reveal delay={70} style={styles.celebration}><ResultBadge type={isFinalSuccess ? 'success' : isFinalFailure ? 'failure' : isCategory ? score >= 8 ? 'success' : 'practice' : prize === 1000000 ? 'jackpot' : 'quick-failure'} /><Text style={styles.eyebrow}>{isFinalSuccess ? 'MEISTERMOMENT' : isFinalFailure ? 'NÄCHSTER VERSUCH' : isCategory ? 'KATEGORIE-CHECK' : 'ARCADE-RUNDE'}</Text><Text style={styles.title}>{isFinalSuccess ? 'BUNDESLAND GEMEISTERT!' : isFinalFailure ? 'NOCH NICHT GESCHAFFT' : isCategory ? score >= 8 ? 'KATEGORIE BESTANDEN' : 'WEITER ÜBEN' : prize === 1000000 ? 'JACKPOT!' : 'RUNDE BEENDET'}</Text><Text style={styles.subtitle}>{isFinalSuccess || isFinalFailure || isCategory ? state.name : 'Schnellquiz'}</Text></Reveal>
     <Reveal delay={170}><Card accent style={styles.resultCard}>
       {isFinalSuccess ? <><Text style={styles.resultLead}>15 / 15 richtig</Text><Text style={styles.resultBody}>Du hast das Finale fehlerfrei gemeistert und {state.name} vollständig abgeschlossen.</Text><View style={styles.rewardBox}><Text style={styles.rewardLabel}>EINMALIGE FINALE-BELohnung</Text><Text style={styles.rewardValue}>{formatEuro(1500)}</Text></View></> : isFinalFailure ? <><Text style={styles.resultLead}>{score} / 15 richtig</Text><Text style={styles.resultBody}>Eine falsche Antwort beendet das Finale. Deine Kategorien und dein bisheriges Guthaben bleiben erhalten.</Text><View style={styles.infoBox}><Text style={styles.infoText}>Du kannst das Finale jederzeit kostenlos neu versuchen.</Text></View></> : isCategory ? <><View style={styles.statsRow}><StatPill label="Dein Ergebnis" value={`${score} / 10`} /><StatPill label="Bestwert" value={`${Number(params.best ?? score)} / 10`} /></View><Text style={styles.resultBody}>{score >= 8 ? 'Stark! Diese Kategorie gilt als bestanden.' : 'Für die Kategorie brauchst du mindestens 8 richtige Antworten.'}</Text><View style={styles.rewardBox}><Text style={styles.rewardLabel}>NEU VERDIENT</Text><Text style={styles.rewardValue}>{formatEuro(reward)}</Text></View></> : <><Text style={styles.resultLead}>{formatEuro(prize)}</Text><Text style={styles.resultBody}>{score === 15 ? 'Alle 15 Fragen richtig – der virtuelle Jackpot gehört dir.' : `Du hast ${score} von 15 Fragen richtig beantwortet.`}</Text><View style={styles.infoBox}><Text style={styles.infoText}>Schnellquiz-Gewinne bleiben getrennt und erhöhen nicht dein Karriere-Guthaben.</Text></View></>}
+      {params.correctAnswer ? <View style={styles.correctAnswerBox}><Text style={styles.correctAnswerLabel}>RICHTIGE ANTWORT</Text><Text style={styles.correctAnswerText}>{params.correctAnswer}</Text></View> : null}
     </Card></Reveal>
     <Reveal delay={250} style={styles.actions}><PrimaryButton title={isFinalSuccess ? 'Zur Deutschlandkarte' : isCategory ? 'Nochmal spielen' : 'Nochmal versuchen'} onPress={isFinalSuccess ? () => router.replace('/career/map') : retry} /><SecondaryButton title={isFinalSuccess || isFinalFailure ? 'Zurück zur Karte' : 'Zum Startbildschirm'} onPress={() => router.replace(isFinalSuccess || isFinalFailure ? '/career/map' : '/')} style={styles.secondaryAction} /></Reveal>
   </Screen>;
@@ -56,6 +57,9 @@ const styles = StyleSheet.create({
   rewardValue: { color: colors.gold, fontSize: 25, fontWeight: '900', marginTop: 4 },
   infoBox: { borderRadius: 12, backgroundColor: colors.secondary, padding: 13, marginTop: 16 },
   infoText: { color: colors.mutedText, fontSize: 12, lineHeight: 18, textAlign: 'center' },
+  correctAnswerBox: { borderRadius: 12, backgroundColor: 'rgba(36,123,89,0.26)', borderWidth: 1, borderColor: 'rgba(111,203,155,0.42)', padding: 13, marginTop: 16 },
+  correctAnswerLabel: { color: '#8FE5B8', fontSize: 10, fontWeight: '900', letterSpacing: 0.8 },
+  correctAnswerText: { color: colors.text, fontSize: 14, lineHeight: 19, fontWeight: '900', marginTop: 4 },
   actions: { marginTop: 18 },
   secondaryAction: { marginTop: 10 },
 });

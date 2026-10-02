@@ -65,9 +65,13 @@ export function canClaimFinalReward(stateId: StateId, progress: Pick<GameProgres
   return !progress.finalRewardsClaimed.includes(stateId) && !progress.completedStates.includes(stateId);
 }
 
-export function evaluateFinalAnswer(correctIndex: number, selectedIndex: number, correctCount: number): { correct: boolean; ended: boolean; correctCount: number } {
+export function evaluateQuizAnswer(correctIndex: number, selectedIndex: number, correctCount: number): { correct: boolean; ended: boolean; correctCount: number } {
   const correct = correctIndex === selectedIndex;
   return { correct, ended: !correct, correctCount: correct ? correctCount + 1 : correctCount };
+}
+
+export function evaluateFinalAnswer(correctIndex: number, selectedIndex: number, correctCount: number): { correct: boolean; ended: boolean; correctCount: number } {
+  return evaluateQuizAnswer(correctIndex, selectedIndex, correctCount);
 }
 
 export function completeFinalProgress(progress: GameProgress, stateId: StateId, correctCount: number, questionIds: string[] = []): GameProgress {
